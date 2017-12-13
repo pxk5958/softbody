@@ -1,2 +1,2 @@
 # softbody
-Soft body simulation using FEM
+Real-tiem Soft body simulation using Pressure Soft Body model

@@ -5,14 +5,130 @@
 </head>
 
 <body>
-    <table width="100%">
-		<tr>
-			<td class="itemBlock" valign="top" align="center">
-				<script src="js/p5.min.js"></script>
-				<script src="js/p5.dom.js"></script>
-				
-		        <script src="js/softbody.js"></script>
-			</td>
-		</tr>
-	</table>
+	
+<h1 align="center">Real-time Soft Body simulation</h1>
+<h4 align="center"><i>by Pratith Kanagaraj (pxk5958@rit.edu)</i></h4>
+
+<div id="canvas">	
+	<script src="js/p5.min.js"></script>
+	<script src="js/p5.dom.js"></script>
+	
+    <script src="js/softbody.js"></script>
+</div>
+
+<h3>About</h3>
+<p>
+The above demo is an implementation of Pressure Soft Body Model by Maciej Matyka. The motivation behind this project is real-time soft body simulation in games.
+</p>
+
+<h3>How to use</h3>
+<p>
+<ol>
+<li>Click the ball with mouse and drag it around.</li>
+<li>Use the arrow keys to move the ball around.</li>
+<li>Use the sliders to adjust various parameters.</li>
+</ol>
+</p>
+
+<h3>Source Code</h3>
+<a href="https://github.com/pxk5958/softbody">Github repository</a>
+
+<h3>Design</h3>
+<p>
+The Pressure Soft Body model consists of material points (MP). Adjacent MP are connected by linear springs. Simulation of such a simple spring-mass (SM) model in a gravity field would just collapse the object. 
+Hence, we add a pressure force that allows deformation of the object but an energy minimum will be there where the body looks like the initial shape.
+<br><img align="middle" src="./images/softbody_1.png" alt="Spring-Mass model" style="width:300px;">
+</p>
+
+<h3>Implementation</h3>
+<p>
+The mass points and the springs connecting them are stored in two arrays. The number of springs is one more than the number of points.
+</p>
+<p>
+The point data structure contains three vectors: position, velocity and force. The accumulated forces are stored in the force vector to be used for next integration step to find the velocity and position.
+</p>
+<p>
+The spring data structure stores the point indices of its endpoints, the rest length of the spring, and the normal vector to the spring. 
+</p>
+<p>
+The algorithm is simple. At each step, we apply external gravity force, and two internal forces, spring force and pressure force. We then integrate the momentum to find the position of the points.
+<br><img align="middle" src="./images/softbody_2.png" alt="Pressure Soft Body model algorithm" style="width:400px;">
+</p>
+<br>
+<p>
+The spring force is calculated using Hooke's law as per the following equation: 
+<br><img align="middle" src="./images/softbody_3.png" alt="Spring force" style="width:400px;">
+<br>where,
+<ul>
+<li>r1 = position of first spring point</li>
+<li>r2 = position of second spring point</li>
+<li>rl = rest length of spring</li>
+<li>v1 = velocity of first spring point</li>
+<li>v2 = velocity of second spring point</li>
+<li>ks = spring constant</li>
+<li>kd = damping factor</li>
+</ul>
+</p>
+<br>
+<p>
+The pressure force is calculated as per the following equation: 
+<br><img align="middle" src="./images/softbody_4.png" alt="Pressure force" style="width:180px;">
+<br>where,
+<ul>
+<li>V = body volume</li>
+<li>A = edge size</li>
+<li>P = pressure value</li>
+<li>n = normal vector to the edge</li>
+</ul>
+</p>
+<br>
+<p>
+We use Gauss theorem to approximate the volume of the body: 
+<br><img align="middle" src="./images/softbody_5.png" alt="Volume" style="width:250px;">
+<br>where,
+<ul>
+<li>abs(x1-x2) = absolute difference of x component of the spring start and end points</li>
+<li>nx = normal vector x component</li>
+<li>dl = spring length</li>
+</ul>
+</p>
+<p>
+For numerical integration, <a href="https://en.wikipedia.org/wiki/Heun%27s_method"> Heun’s predictor/corrector semi-implicit scheme</a> is used.
+</p>
+
+<h3>Results</h3>
+<p>
+Here is a video of the soft ball bouncing around with default parameters:
+<br><iframe width="560" height="315" src="https://www.youtube.com/embed/hVj8zPS1MkI" frameborder="0" gesture="media" allow="encrypted-media" allowfullscreen></iframe>
+</p>
+<p>
+If we increase the pressure, the ball inflates like a balloon to occupy the whole space and eventually blows up (the spring simulation blows up):
+<br><iframe width="560" height="315" src="https://www.youtube.com/embed/pfBuSa8v_5Y" frameborder="0" gesture="media" allow="encrypted-media" allowfullscreen></iframe>
+</p>
+<p>
+If we reduce the pressure to minimum, increase the mass a bit, and reduce the spring constant, the ball deflates and looks like goo when we move it around:
+<br><iframe width="560" height="315" src="https://www.youtube.com/embed/26UNyUBzGh8" frameborder="0" gesture="media" allow="encrypted-media" allowfullscreen></iframe>
+</p>
+
+<h3>Future work</h3>
+<p>
+<ol>
+<li>Extend the Pressure Soft Body model to 3D.</li>
+<li>There seems to be limitations in the shape of the soft body that can created using this method, 
+since the pressure from inside blows up the shape and tries to reach minimum energy. For example, in 2D, it always becomes a ball shape. 
+Rigid constraints could probably be used to get over this issue.</li>
+<li>This method is not as accurate as Finite Element Method. 
+In the future, the body mesh could be tetrahedralized and then FEM could be applied to created realistic soft body deformation and fracture physics.</li>
+</ol>
+</p>
+
+<h3>References</h3>
+<p>
+<ol>
+<li>Matyka, M., Ollila, M. "A Pressure Model for Soft Body Simulation", Proc. of Sigrad, UMEA, 2003</li>
+<li>Matyka, M. "How to implement a pressure soft body model"</li>
+<li>Ancona, M. G. "Computational Methods for Applied Science and Engineering: An interactive Approach", Rinton Press, 2002</li>
+</ol>    
+</p>
+
 </body>

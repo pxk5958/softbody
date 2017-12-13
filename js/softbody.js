@@ -1,5 +1,5 @@
 /**
- * Computer Animation Algorithms - Soft Body Physics
+ * Real-time Soft Body Simulation using Pressurized Mass-Spring model
  *
  * @author Pratith Kanagaraj <pxk5958@rit.edu>, 2017
  */
@@ -8,8 +8,6 @@ const FPS = 60;
 const N_POINTS = 30;
 const N_SPRINGS = N_POINTS;
 const LENGTH = 75;
-const R = 190.0;
-const R2 = R * R;
 const BALL_R = 0.516;
 const CUBE_S = 1;
 const GY = 110.0;
@@ -27,33 +25,10 @@ const MAX_KS = 2000.0;
 const MIN_KD = 0.0;
 const DEF_KD = 40.0;
 const MAX_KD = 70.0;
-//Tangential and normal damping factors
-const TDF = 0.99;                         //0.95 by default, 1.0 works, 1.01 is cool
-// A TDF of 1.0 means frictionless boundaries.
-// If some energy were not lost due to the ball's
-// spring-damping, the ball could continue
-// traveling forever without any force.
-const NDF = 0.1;
 
 // Set the scene size.
 const WIDTH = 800;
 const HEIGHT = 500;
-
-// Set some camera attributes.
-const VIEW_ANGLE = 45;
-const NEAR = 0.1;
-const FAR = 10000;
-
-// Set the controls speeds
-const ROTATE = 15;
-const ZOOM = 10;
-const PAN = 6;
-
-// Create a capturer that exports a WebM video
-// var capturer  = new CCapture( { 
-// 	format: 'webm',
-// 	timeLimit: 10
-// } );
 
 var pressure = DEF_PRESSURE;
 var points, springs;
@@ -72,23 +47,64 @@ var options = {
 	kd: DEF_KD
 };
 
-/**
 
- * Initializes WebGL using three.js and sets up the scene
+class Points {
+	constructor(n_pts) {
+		this.x = [];
+		this.y = [];
+		this.vx = [];
+		this.vy = [];
+		this.fx = [];
+		this.fy = [];
+		
+		for (var i = 0; i < n_pts; ++i) {
+			this.x.push(0);
+			this.y.push(0);
+			this.vx.push(0);
+			this.vy.push(0);
+			this.fx.push(0);
+			this.fy.push(0);
+		}
+	}
+}
+
+class Springs {
+	constructor(n_springs) {
+		this.spring1 = [];
+		this.spring2 = [];
+		this.length = [];
+		this.nx = [];
+		this.ny = [];
+		
+		for (var i = 0; i < n_springs; ++i) {
+			this.spring1.push(0);
+			this.spring2.push(0);
+			this.length.push(0);
+			this.nx.push(0);
+			this.ny.push(0);
+		}
+	}
+}
+
+
+/**
+ * Initializes p5.js and sets up the scene
  */
+ 
 function setup() {
-	createCanvas(WIDTH + 400, HEIGHT + 100);
+	var canvas = createCanvas(WIDTH + 400, HEIGHT + 100);
+	canvas.parent('canvas');
     frameRate(FPS);
     
     // UI
     pressureSlider = createSlider(MIN_PRESSURE, MAX_PRESSURE, DEF_PRESSURE);
-	pressureSlider.position(WIDTH + 20, 50);
+	pressureSlider.position(WIDTH + 20, 150);
 	
 	massSlider = createSlider(MIN_MASS, MAX_MASS, DEF_MASS);
-	massSlider.position(WIDTH + 20, 100);
+	massSlider.position(WIDTH + 20, 200);
 	
 	ksSlider = createSlider(MIN_KS, MAX_KS, DEF_KS);
-	ksSlider.position(WIDTH + 20, 150);
+	ksSlider.position(WIDTH + 20, 250);
 	
 	//kdSlider = createSlider(MIN_KD, MAX_KD, DEF_KD);
 	//kdSlider.position(WIDTH + 20, 200);
@@ -97,6 +113,11 @@ function setup() {
 	createBall();
 }
 
+
+/**
+ * p5.js render function
+ */
+ 
 function draw() {
 	background(255);
 	
@@ -107,10 +128,9 @@ function draw() {
 	//text("kd (damping factor)", kdSlider.x + kdSlider.width + 20, 200);
 	
 	fill(255);
-	//ellipse(WIDTH/2, HEIGHT/2, 2*R, 2*R);
 	rect(0, 0, WIDTH, HEIGHT);
 	
-	fill('#ff0000');
+	fill('#0000ff');
 	noStroke();
 	beginShape();
 	for (var i=0; i < points.x.length; i++) {
@@ -133,6 +153,10 @@ function draw() {
 }
 
 
+/**
+ * Function called when a key is pressed
+ */
+
 function keyPressed() {
 	switch (keyCode) {
 		case UP_ARROW: upArrow=true; break;
@@ -142,6 +166,11 @@ function keyPressed() {
 		default: break;
 	}
 }
+
+
+/**
+ * Function called when a key is released
+ */
 
 function keyReleased() {
 	switch (keyCode) {
@@ -153,14 +182,28 @@ function keyReleased() {
 	}
 }
 
+
+/**
+ * Function called when mouse button is pressed
+ */
+
 function mousePressed() {
 	mouseP = (mouseX >= 0 && mouseX <= WIDTH && mouseY >= 0 && mouseY <= HEIGHT);
 }
+
+
+/**
+ * Function called when mouse button is released
+ */
 
 function mouseReleased() {
 	mouseP = false;
 }
 
+
+/**
+ * Function to add a spring
+ */
 
 function addSpring(i, j, k) {
 	springs.spring1[i] = j;
@@ -171,6 +214,11 @@ function addSpring(i, j, k) {
 		+ (points.y[j] - points.y[k])*(points.y[j] - points.y[k]) 
 	);
 }
+
+
+/**
+ * Creates a ball soft body
+ */
 
 function createBall() {
 	points = new Points(N_POINTS);
@@ -186,6 +234,11 @@ function createBall() {
 	}
 	addSpring(N_POINTS-1, N_POINTS-1, 0);
 }
+
+
+/**
+ * Creates a cube soft body
+ */
 
 function createCube() {
 	points = new Points(N_POINTS);
@@ -213,6 +266,11 @@ function createCube() {
 	}
 	addSpring(N_POINTS-1, N_POINTS-1, 0);
 }
+
+
+/**
+ * Accumulates forces for integration
+ */
 
 function accumulateForces() {
 	var x1, x2, y1, y2;
@@ -271,10 +329,10 @@ function accumulateForces() {
 		y1 = points.y[springs.spring1[i]];
 		y2 = points.y[springs.spring2[i]];
 
-		// Find the distance between each spring:
+		// Find the distance between each spring
 		r12d = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
 
-		// Accumulate spring forces:
+		// Accumulate spring force
 		if (r12d != 0) {
 			vx12 = points.vx[springs.spring1[i]] - points.vx[springs.spring2[i]];
 			vy12 = points.vy[springs.spring1[i]] - points.vy[springs.spring2[i]];
@@ -291,7 +349,7 @@ function accumulateForces() {
 			points.fy[springs.spring2[i]] += fy0;
 		}
 		
-		// Calculate normal vectors for use with finding pressure force:
+		// Calculate normal vectors for calculating pressure force later
 		springs.nx[i] = -(y1 - y2) / r12d;
 		springs.ny[i] = (x1 - x2) / r12d;
 	}
@@ -326,7 +384,13 @@ function accumulateForces() {
 	}
 }
 
-function integrateHeun() {
+
+/**
+ * Integrate forces to find velocity and then displacement 
+ * using Heun predictor-corrector numerical integration
+ */
+
+function integrate() {
 	var drx, dry;
 	
 	var fxsaved = [], fysaved = [], vxsaved = [], vysaved = [];
@@ -352,53 +416,9 @@ function integrateHeun() {
 	for (var i = 0; i < N_POINTS; ++i) {
 		points.vx[i] = vxsaved[i] + (points.fx[i] + fxsaved[i]) / options.mass * DT/2;
 		drx = points.vx[i] * DT;
-		//points.x[i] += drx;
 		
 		points.vy[i] = vysaved[i] + (points.fy[i] + fysaved[i]) / options.mass * DT/2;
 		dry = points.vy[i] * DT;
-		//points.y[i] += dry;
-		
-		/*
-		points.x[i] = Math.min(points.x[i], WIDTH/2.0 + R);
-		points.x[i] = Math.max(points.x[i], WIDTH/2.0 - R);
-
-		points.y[i] = Math.min(points.y[i], HEIGHT/2.0 + R);
-		points.y[i] = Math.max(points.y[i], HEIGHT/2.0 - R);
-
-		if (points.x[i] + drx > Math.sqrt(R2 - Math.pow(points.y[i] - HEIGHT/2.0, 2)) + WIDTH/2.0 
-			|| points.x[i] + drx < -Math.sqrt(R2 - Math.pow(points.y[i] - HEIGHT/2.0, 2)) + WIDTH/2.0)
-		{
-			drx *= -1;                           //These are temporary until I do
-			dry *= -1;                           //the math to get more exact values.
-
-			var vx0 = points.vx[i];
-			var vy0 = points.vy[i];
-
-			var sinTheta = (points.y[i] - HEIGHT/2.0) / R;
-			var cosTheta = (points.x[i] - WIDTH/2.0) / R;
-
-			points.vx[i] = -vx0;
-			points.vy[i] = -vy0;
-			points.vx[i] = vy0 * (-TDF * sinTheta * cosTheta - NDF * sinTheta * cosTheta) + vx0 * (TDF * sinTheta * sinTheta - NDF * cosTheta * cosTheta);
-			points.vy[i] = vy0 * (TDF * cosTheta * cosTheta - NDF * sinTheta * sinTheta) + vx0 * (-TDF * sinTheta * cosTheta - NDF * sinTheta * cosTheta);
-		}
-
-		if (points.y[i] > HEIGHT/2.0 + R/2.0) { // need these checks to avoid setting to wrong sign
-			points.y[i] = Math.min(points.y[i], Math.sqrt(Math.abs(R2 - Math.pow(points.x[i] - WIDTH/2.0, 2))) + HEIGHT/2.0);
-		}
-
-		if (points.y[i] < HEIGHT/2.0 - R/2.0) {
-			points.y[i] = Math.max(points.y[i], -Math.sqrt(Math.abs(R2 - Math.pow(points.x[i] - WIDTH/2.0, 2))) + HEIGHT/2.0);
-		}
-
-		if (points.x[i] > WIDTH/2.0 + R/2.0) {
-			points.x[i] = Math.min(points.x[i], Math.sqrt(Math.abs(R2 - Math.pow(points.y[i] - HEIGHT/2.0, 2))) + WIDTH/2.0);
-		}
-
-		if (points.x[i] < WIDTH/2.0 - R/2.0) {
-			points.x[i] = Math.max(points.x[i], -Math.sqrt(Math.abs(R2 - Math.pow(points.y[i] - HEIGHT/2.0, 2))) + WIDTH/2.0);
-		}
-		*/
 		
 		if (points.y[i] + dry < 0) {
 			points.y[i] = 0;
@@ -426,50 +446,14 @@ function integrateHeun() {
 	}
 }
 
+
+/**
+ * Update function
+ */
+
 function update() {
 	accumulateForces();
-	integrateHeun();
+	integrate();
 	
-	// if (pressure < options.maxPressure) {
-	// 	pressure += options.maxPressure / 300.0;
-	// }
 	pressure = options.maxPressure;
-}
-
-class Points {
-	constructor(n_pts) {
-		this.x = [];
-		this.y = [];
-		this.vx = [];
-		this.vy = [];
-		this.fx = [];
-		this.fy = [];
-		
-		for (var i = 0; i < n_pts; ++i) {
-			this.x.push(0);
-			this.y.push(0);
-			this.vx.push(0);
-			this.vy.push(0);
-			this.fx.push(0);
-			this.fy.push(0);
-		}
-	}
-}
-
-class Springs {
-	constructor(n_springs) {
-		this.spring1 = [];
-		this.spring2 = [];
-		this.length = [];
-		this.nx = [];
-		this.ny = [];
-		
-		for (var i = 0; i < n_springs; ++i) {
-			this.spring1.push(0);
-			this.spring2.push(0);
-			this.length.push(0);
-			this.nx.push(0);
-			this.ny.push(0);
-		}
-	}
 }
